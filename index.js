@@ -8,14 +8,17 @@ bot.on('message', async (msg) => {
     const response = await axios.post(
       "https://cloud.flowiseai.com/api/v1/prediction/5ecfc67f-e2dd-4166-9a33-c00456cb64cd",
       {
-        input: msg.text,
+        question: msg.text,
         overrideConfig: {
-          sessionId: msg.chat.id.toString()
+          sessionId: String(msg.chat.id)
         }
       }
     );
 
-    const reply = response.data.text || response.data.answer || "Нет ответа";
+    const reply =
+      response.data.text ||
+      response.data.answer ||
+      "Нет ответа";
 
     bot.sendMessage(msg.chat.id, reply);
 
