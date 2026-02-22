@@ -7,10 +7,14 @@ bot.on('message', async (msg) => {
   try {
     const response = await axios.post(
       "https://cloud.flowiseai.com/api/v1/prediction/5ecfc67f-e2dd-4166-9a33-c00456cb64cd",
-      { input: msg.text }
+      {
+        input: msg.text,
+        sessionId: msg.chat.id.toString()
+      }
     );
 
     bot.sendMessage(msg.chat.id, response.data.text);
+
   } catch (err) {
     bot.sendMessage(msg.chat.id, "Ошибка AI");
   }
