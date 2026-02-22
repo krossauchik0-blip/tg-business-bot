@@ -2,59 +2,50 @@ import express from "express";
 import axios from "axios";
 import TelegramBot from "node-telegram-bot-api";
 
+console.log("🔥 NEW WEBHOOK VERSION STARTED 🔥");
+
 const app = express();
 app.use(express.json());
 
-// ====== НАСТРОЙКИ ======
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const FLOWISE_URL =
   "https://cloud.flowiseai.com/api/v1/prediction/5ecfc67f-e2dd-4166-9a33-c00456cb64cd";
 
 if (!BOT_TOKEN) {
-  console.error("❌ BOT_TOKEN не найден в переменных окружения");
+  console.error("❌ BOT_TOKEN not found");
   process.exit(1);
 }
 
-const bot = new TelegramBot(BOT_TOKEN);
+const bot = new TelegramBot(BOT_TOKEN); // ❗ БЕЗ polling
 
-// ====== HEALTH CHECK ======
+// Проверка сервера
 app.get("/", (req, res) => {
-  res.status(200).send("Bot is running");
+  res.status(200).send("Server is running");
 });
 
-// ====== TELEGRAM WEBHOOK ======
+// Webhook от Telegram
 app.post(`/bot${BOT_TOKEN}`, async (req, res) => {
   try {
-    const msg = req.body.message;
+    const message = req.body.message;
 
-    if (!msg || !msg.text) {
+    if (!message || !message.text) {
       return res.sendStatus(200);
     }
 
-    const chatId = msg.chat.id;
-    const userText = msg.text;
+    const chatId = message.chat.id;
+    const text = message.text;
     const sessionId = `tg_${chatId}`;
 
-    console.log("📩 USER:", userText);
+    console.log("📩 USER:", text);
 
-    // ====== ЗАПРОС В FLOWISE ======
-    const flowiseResponse = await axios.post(
-      FLOWISE_URL,
-      {
-        input: userText,
-        overrideConfig: {
-          sessionId: sessionId
-        }
-      },
-      {
-        headers: {
-          "Content-Type": "application/json"
-        },
-        timeout: 30000
+    const flowiseResponse = await axios.post(FLOWISE_URL, {
+      input: text,
+      overrideConfig: {
+        sessionId: sessionId
       }
-    );
+    });
 
-    console.log("🤖 FLOWISE RAW:", flowiseResponse.data);
+    console.log("🤖 FLOWISE:", flowiseResponse.data);
 
     const reply =
       flowiseResponse.data?.text ||
@@ -64,13 +55,12 @@ app.post(`/bot${BOT_TOKEN}`, async (req, res) => {
     await bot.sendMessage(chatId, reply);
 
     res.sendStatus(200);
-  } catch (error) {
-    console.error("🔥 ERROR:", error.response?.data || error.message);
+  } catch (err) {
+    console.error("🔥 ERROR:", err.response?.data || err.message);
     res.sendStatus(200);
   }
 });
 
-// ====== START SERVER ======
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
