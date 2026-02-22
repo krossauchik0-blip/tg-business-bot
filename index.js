@@ -1,26 +1,26 @@
-импорт TelegramBot от 'node-telegram-bot-api';
-импорт аксиос от 'аксиос';
+import TelegramBot from 'node-telegram-bot-api';
+import axios from 'axios';
 
-константа бот = новый TelegramBot(процесс.энв.БОТ_ТОКЕН, { опрос: истинный });
+const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 
-бот.на('сообщение', асинхронный (сообщение) => {
-  пытаться {
-    константа ответ = ждать аксиос.почта(
+bot.on('message', async (msg) => {
+  try {
+    const response = await axios.post(
       "https://cloud.flowiseai.com/api/v1/prediction/5ecfc67f-e2dd-4166-9a33-c00456cb64cd",
       {
-        вход: сообщение.текст,
-        переопределитьКонфигурацию: {
-          sessionId: сообщение.чат.идентификатор.toString()
+        input: msg.text,
+        overrideConfig: {
+          sessionId: msg.chat.id.toString()
         }
       }
     );
 
-    константа отвечать = ответ.данные.текст || ответ.данные.отвечать || "Нет ответа";
+    const reply = response.data.text || response.data.answer || "Нет ответа";
 
-    бот.отправитьСообщение(сообщение.чат.идентификатор, отвечать);
+    bot.sendMessage(msg.chat.id, reply);
 
-  } ловить (ошибаться) {
-    консоль.ошибка(ошибаться.ответ?.данные || ошибаться.сообщение);
-    бот.отправитьСообщение(сообщение.чат.идентификатор, "Ошибка ИИ");
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    bot.sendMessage(msg.chat.id, "Ошибка AI");
   }
 });
