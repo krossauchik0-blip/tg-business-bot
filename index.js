@@ -11,6 +11,10 @@ const FLOWISE_URL =
 
 const bot = new TelegramBot(BOT_TOKEN);
 
+app.get("/", (req, res) => {
+  res.send("Bot is running");
+});
+
 app.post(`/bot${BOT_TOKEN}`, async (req, res) => {
   try {
     const msg = req.body.message;
